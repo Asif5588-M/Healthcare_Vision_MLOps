@@ -44,18 +44,10 @@ class ModelTrainer:
             test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
 
             print(f"[INFO] Found {len(train_dataset)} training images mapped to classes: {train_dataset.classes}")
-
-            print("[INFO] Initializing Lightweight MobileNetV3 Transfer Learning Backbone...")
+            print("[INFO] Initializing MobileNetV3 Backbone...")
             
-            # Version-safe model declaration sequence
-            try:
-                # Try loading via modern weights class
-                weights = models.MobileNetV3_Small_Weights.DEFAULT
-                model = models.mobilenet_v3_small(weights=weights)
-            except AttributeError:
-                # Fallback implementation mechanism for legacy torchvision builds
-                print("[INFO] Backward compatibility fallback triggered for legacy torchvision...")
-                model = models.mobilenet_v3_small(pretrained=True)
+            # Pure legacy-safe instantiation to entirely bypass the modern Weights enumeration block
+            model = models.mobilenet_v3_small(pretrained=True)
             
             for param in model.parameters():
                 param.requires_grad = False
