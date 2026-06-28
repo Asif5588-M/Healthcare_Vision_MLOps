@@ -12,7 +12,6 @@ class ModelTrainer:
         self.batch_size = batch_size
         self.epochs = epochs
         
-        # Set up dynamic device routing (GPU if available, otherwise CPU)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"[INFO] Training execution engine bound to hardware: {self.device}")
 
@@ -25,7 +24,6 @@ class ModelTrainer:
                 raise FileNotFoundError(f"Target directory structures missing at: {self.data_dir}")
 
             print("[INFO] Setting up image augmentations and pipeline transformations...")
-            # Training data needs augmentation to prevent overfitting
             train_transforms = transforms.Compose([
                 transforms.Resize((224, 224)),
                 transforms.RandomHorizontalFlip(),
@@ -33,14 +31,12 @@ class ModelTrainer:
                 transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
             ])
 
-            # Testing data only needs validation scaling mapping configurations
             test_transforms = transforms.Compose([
                 transforms.Resize((224, 224)),
                 transforms.ToTensor(),
                 transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
             ])
 
-            # Creating robust Data Loaders
             train_dataset = datasets.ImageFolder(train_path, transform=train_transforms)
             test_dataset = datasets.ImageFolder(test_path, transform=test_transforms)
 
@@ -50,21 +46,28 @@ class ModelTrainer:
             print(f"[INFO] Found {len(train_dataset)} training images mapped to classes: {train_dataset.classes}")
 
             print("[INFO] Initializing Lightweight MobileNetV3 Transfer Learning Backbone...")
-            # Using pre-trained weights for state-of-the-art baseline convergence
-            model = models.mobilenet_v3_small(weights=models.MobileNetV3_Small_Weights.DEFAULT)
             
-            # Freeze structural feature layers to accelerate extraction
+            # Version-safe model declaration sequence
+            try:
+                # Try loading via modern weights class
+                weights = models.MobileNetV3_Small_Weights.DEFAULT
+                model = models.mobilenet_v3_small(weights=weights)
+            except AttributeError:
+                # Fallback implementation mechanism for legacy torchvision builds
+                print("[INFO] Backward compatibility fallback triggered for legacy torchvision...")
+                model = models.mobilenet_v3_small(pretrained=True)
+            
             for param in model.parameters():
                 param.requires_grad = False
 
-            # Modify the final classification layer for our specific 2 target classes (Normal vs Pneumonia)
-            in_features = model.classifier[3].in_features
-            model.classifier[3] = nn.Linear(in_features, 2)
+            in_features = model.classifier[0].in_features
+            model.classifier = nn.Sequential(
+                nn.Linear(in_features, 2)
+            )
             model = model.to(self.device)
 
-            # Defining standard optimization metrics
             criterion = nn.CrossEntropyLoss()
-            optimizer = optim.Adam(model.classifier[3].parameters(), lr=0.001)
+            optimizer = optim.Adam(model.classifier.parameters(), lr=0.001)
 
             print(f"[INFO] Launching deep model optimization for {self.epochs} epochs...")
             for epoch in range(self.epochs):
@@ -85,7 +88,6 @@ class ModelTrainer:
                 epoch_loss = running_loss / len(train_dataset)
                 print(f"Epoch {epoch+1}/{self.epochs} Completed -> Training Loss: {epoch_loss:.4f}")
 
-            # Exporting final trained state weights locally
             os.makedirs(self.artifacts_dir, exist_ok=True)
             model_save_path = os.path.join(self.artifacts_dir, "model.pth")
             torch.save(model.state_dict(), model_save_path)
