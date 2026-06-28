@@ -31,23 +31,15 @@ class ModelTrainer:
                 transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
             ])
 
-            test_transforms = transforms.Compose([
-                transforms.Resize((224, 224)),
-                transforms.ToTensor(),
-                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-            ])
-
             train_dataset = datasets.ImageFolder(train_path, transform=train_transforms)
-            test_dataset = datasets.ImageFolder(test_path, transform=test_transforms)
-
             train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
-            test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
 
             print(f"[INFO] Found {len(train_dataset)} training images mapped to classes: {train_dataset.classes}")
-            print("[INFO] Initializing MobileNetV3 Backbone...")
+            print("[INFO] Initializing Modern MobileNetV3 Small Network...")
             
-            # Pure legacy-safe instantiation to entirely bypass the modern Weights enumeration block
-            model = models.mobilenet_v3_small(pretrained=True)
+            # Using the exact up-to-date stable weights definition format
+            weights = models.MobileNetV3_Small_Weights.DEFAULT
+            model = models.mobilenet_v3_small(weights=weights)
             
             for param in model.parameters():
                 param.requires_grad = False
