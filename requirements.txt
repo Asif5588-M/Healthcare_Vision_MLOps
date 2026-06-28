@@ -1,0 +1,15 @@
+torch
+torchvision
+torchaudio
+pandas
+numpy
+scikit-learn
+matplotlib
+seaborn
+streamlit
+gradio
+huggingface_hub
+kaggle
+python-dotenv
+pyyaml
+-e .

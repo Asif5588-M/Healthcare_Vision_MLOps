@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.pytest_cache/
+data/
+artifacts/
+.kaggle/
+*.json
+config.env
+.env
